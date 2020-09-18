@@ -26,7 +26,9 @@
 #endif
 
 /* thread_arch_t member offsets */
+#ifndef CONFIG_USE_SWITCH
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
+#endif /* !CONFIG_USE_SWITCH */
 
 /* struct coop member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);

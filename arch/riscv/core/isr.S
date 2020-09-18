@@ -92,6 +92,31 @@ GTEXT(_offload_routine)
 /* exports */
 GTEXT(__irq_wrapper)
 
+/*
+ * xcpu: pointer of _kernel.cpus[n]
+ * xold: (result) old thread
+ * xnew: (result) next thread to schedule
+ *
+ * after this function a0 is broken
+ */
+.macro z_riscv_get_next_switch_handle xcpu, xold, xnew
+#ifdef CONFIG_USE_SWITCH
+	addi sp, sp, -RV_REGSIZE*2
+	RV_OP_STOREREG ra, RV_REGSIZE(sp)
+	addi a0, sp, 0
+	jal ra, z_arch_get_next_switch_handle
+	addi \xnew, a0, 0
+	RV_OP_LOADREG \xold, 0(sp)
+	RV_OP_LOADREG ra, RV_REGSIZE(sp)
+	addi sp, sp, RV_REGSIZE*2
+#else
+	/* Get pointer to _kernel.current */
+	RV_OP_LOADREG \xold, _kernel_offset_to_current(\xcpu)
+
+	RV_OP_LOADREG \xnew, _kernel_offset_to_ready_q_cache(\xcpu)
+#endif
+.endm
+
 /* use ABI name of registers for the sake of simplicity */
 
 /*
@@ -240,6 +265,27 @@ is_syscall:
 	bnez t1, is_interrupt
 #endif
 
+#ifdef CONFIG_USE_SWITCH
+	/*
+	 * Get new_thread and old_thread from stack.
+	 *   - a0 = new_thread->switch_handle  -> _current
+	 *   - a1 = &old_thread->switch_handle -> t1
+	 */
+
+	/* Get reference to _kernel */
+	la t2, _kernel
+
+	/* Get new_thread from stack */
+	RV_OP_LOADREG t1, __z_arch_esf_t_a0_OFFSET(sp)
+
+	/* Set new thread to _current */
+	RV_OP_STOREREG t1, ___cpu_t_current_OFFSET(t2)
+
+	/* Get old_thread from stack and set it to t1 */
+	RV_OP_LOADREG t1, __z_arch_esf_t_a1_OFFSET(sp)
+	addi t1, t1, -___thread_t_switch_handle_OFFSET
+#endif
+
 	/*
 	 * Go to reschedule to handle context-switch
 	 */
@@ -340,18 +386,17 @@ on_thread_stack:
 
 #ifdef CONFIG_PREEMPT_ENABLED
 	/*
-	 * Check if we need to perform a reschedule
-	 */
-
-	/* Get pointer to _kernel.current */
-	RV_OP_LOADREG t2, _kernel_offset_to_current(t1)
-
-	/*
 	 * Check if next thread to schedule is current thread.
 	 * If yes do not perform a reschedule
 	 */
-	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t1)
+	z_riscv_get_next_switch_handle t1, t2, t3
 	beq t3, t2, no_reschedule
+
+#ifdef CONFIG_USE_SWITCH
+	/* Set old thread to t1 */
+	addi t1, t2, 0
+#endif
+
 #else
 	j no_reschedule
 #endif /* CONFIG_PREEMPT_ENABLED */
@@ -360,11 +405,19 @@ reschedule:
 #if CONFIG_TRACING
 	call sys_trace_thread_switched_out
 #endif
+
 	/* Get reference to _kernel */
 	la t0, _kernel
 
+#ifdef CONFIG_USE_SWITCH
+	/*
+	 * Must t1 hold old_thread but we cannot use _current.
+	 * Because from IRQ path _current is updated by new_thread.
+	 */
+#else /* CONFIG_USE_SWITCH */
 	/* Get pointer to _kernel.current */
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+#endif /* CONFIG_USE_SWITCH */
 
 	/*
 	 * Save callee-saved registers of current thread
@@ -393,14 +446,18 @@ reschedule:
 skip_store_fp_callee_saved:
 #endif
 
-	/*
-	 * Save stack pointer of current thread and set the default return value
-	 * of z_swap to _k_neg_eagain for the thread.
-	 */
+	/* Save stack pointer of current thread. */
 	RV_OP_STOREREG sp, _thread_offset_to_sp(t1)
+
+#ifndef CONFIG_USE_SWITCH
+	/*
+	 * Set the default return value of z_swap to _k_neg_eagain for
+	 * the thread.
+	 */
 	la t2, _k_neg_eagain
 	lw t3, 0x00(t2)
 	sw t3, _thread_offset_to_swap_return_value(t1)
+#endif /* !CONFIG_USE_SWITCH */
 
 	/* Get next thread to schedule. */
 	RV_OP_LOADREG t1, _kernel_offset_to_ready_q_cache(t0)
