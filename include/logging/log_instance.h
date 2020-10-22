@@ -35,6 +35,9 @@ struct log_source_dynamic_data {
 	 */
 	uint32_t dummy[2];
 #endif
+#if defined(CONFIG_RISCV) && defined(CONFIG_64BIT)
+	uint32_t dummy;
+#endif
 };
 
 /** @brief Creates name of variable and section for constant log data.
