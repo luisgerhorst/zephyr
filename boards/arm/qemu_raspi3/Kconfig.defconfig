@@ -7,6 +7,6 @@ config BUILD_OUTPUT_BIN
 	default n
 
 config BOARD
-	default "qemu_cortex_a53"
+	default "qemu_raspi3"
 
 endif # BOARD_QEMU_RASPI3

@@ -3,6 +3,6 @@
 
 config BOARD_QEMU_RASPI3
 	bool "RPi 3 Emulation (QEMU)"
-	depends on SOC_QEMU_CORTEX_A53
+	depends on SOC_QEMU_RASPI3
 	select ARM64
 	select QEMU_TARGET
