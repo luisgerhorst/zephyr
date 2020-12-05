@@ -3,11 +3,11 @@
 
 set(EMU_PLATFORM qemu)
 set(QEMU_ARCH aarch64)
+set(QEMU_KERNEL_OPTION "-kernel;${ZEPHYR_BINARY_DIR}/zephyr.bin")
 
-set(QEMU_CPU_TYPE_${ARCH} cortex-a53)
 set(QEMU_FLAGS_${ARCH}
-  -cpu ${QEMU_CPU_TYPE_${ARCH}}
+  -M raspi3
+  -smp 4
   -nographic
-  -machine virt,secure=on,gic-version=3
   )
 board_set_debugger_ifnset(qemu)

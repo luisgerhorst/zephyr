@@ -9,7 +9,7 @@
 #include <arm/qemu-virt/qemu-virt-a53.dtsi>
 
 / {
-	model = "QEMU Cortex-A53";
+	model = "QEMU Raspberry Pi 3";
 	compatible = "qemu,arm-cortex-a53";
 
 	chosen {

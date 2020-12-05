@@ -4,7 +4,7 @@
 if BOARD_QEMU_RASPI3
 
 config BUILD_OUTPUT_BIN
-	default n
+	default y
 
 config BOARD
 	default "qemu_raspi3"
