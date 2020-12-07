@@ -439,6 +439,8 @@ sys_rand_fallback:
 /* defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR) */
 #endif
 
+#include "raspi3.c"
+
 /**
  *
  * @brief Initialize kernel

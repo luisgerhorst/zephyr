@@ -111,17 +111,18 @@ SECTIONS
     {
         _image_text_start = .;
 
-        _vector_start = .;
-        KEEP(*(.exc_vector_table))
+        *(.text)
+        *(".text.*")
+        *(.gnu.linkonce.t.*)
+
+        /* For raspi3: moved this after text to allow __start to be at 0x0 of
+        the image. This is where the boot load enters into the kernel. */
+        _vector_start = .; KEEP(*(.exc_vector_table))
         KEEP(*(".exc_vector_table.*"))
 
         KEEP(*(.vectors))
 
         _vector_end = .;
-
-        *(.text)
-        *(".text.*")
-        *(.gnu.linkonce.t.*)
 
         /*
          * These are here according to 'arm-zephyr-elf-ld --verbose',

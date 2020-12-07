@@ -52,7 +52,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
  */
 GTEXT(__start)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
-
+    b raspi3_helloworld
 	/* Setup vector table */
 	adr	x19, _vector_table
 
@@ -152,3 +152,63 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	daifclr, #(DAIFSET_ABT)
 
 	bl	z_arm64_prep_c
+
+
+#define PAGE_SHIFT 12
+#define TABLE_SHIFT 9
+#define SECTION_SHIFT (PAGE_SHIFT + TABLE_SHIFT)
+
+#define PAGE_SIZE (1 << PAGE_SHIFT)
+#define SECTION_SIZE (1 << SECTION_SHIFT)
+
+#define LOW_MEMORY (2 * SECTION_SIZE)
+
+raspi3_helloworld:
+    mrs     x0, mpidr_el1
+    and     x0, x0,#0xFF
+    cbz     x0, master
+    b       slave
+
+master:
+    adr     x0, __bss_start
+    adr     x1, __bss_end
+    sub     x1, x1, x0
+    bl      raspi3_memzero
+
+    mov     sp, #LOW_MEMORY
+    mrs     x0, mpidr_el1
+    and     x0, x0,#0xFF
+    bl      raspi3_c_helloworld
+
+slave:
+    mov     sp, #LOW_MEMORY
+    mrs     x0, mpidr_el1
+	and     x0, x0,#0xFF
+    lsl     x0, x0, #15
+    bl      raspi3_delay
+    mrs     x0, mpidr_el1
+	and     x0, x0,#0xFF
+    bl      raspi3_c_helloworld
+
+    .globl raspi3_put32
+raspi3_put32:
+	str w1,[x0]
+	ret
+
+    .globl raspi3_get32
+raspi3_get32:
+	ldr w0,[x0]
+	ret
+
+    .globl raspi3_delay
+raspi3_delay:
+	subs x0, x0, #1
+	bne raspi3_delay
+	ret
+
+    .globl raspi3_memzero
+raspi3_memzero:
+	str xzr, [x0], #8
+	subs x1, x1, #8
+	b.gt raspi3_memzero
+	ret
