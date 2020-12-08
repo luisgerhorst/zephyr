@@ -16,6 +16,8 @@
 
 #include <kernel_internal.h>
 
+extern void raspi3_c_helloworld(void);
+
 extern FUNC_NORETURN void z_cstart(void);
 /**
  *
@@ -28,6 +30,7 @@ extern FUNC_NORETURN void z_cstart(void);
 void z_arm64_prep_c(void)
 {
 	z_bss_zero();
+	raspi3_c_helloworld();
 	z_arm64_interrupt_init();
 	z_cstart();
 

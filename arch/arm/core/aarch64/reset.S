@@ -155,7 +155,6 @@ References:
     eret
 
 1:
-
 	/* Initialize VBAR */
 	msr	vbar_el1, x19
 	isb
@@ -183,8 +182,7 @@ References:
 	/* Enable the SError interrupt */
 	msr	daifclr, #(DAIFSET_ABT)
 
-    b raspi3_helloworld
-	bl	z_arm64_prep_c
+    bl	z_arm64_prep_c
 
 
 #define PAGE_SHIFT 12
