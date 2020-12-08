@@ -52,7 +52,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
  */
 GTEXT(__start)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
-    b raspi3_helloworld
 	/* Setup vector table */
 	adr	x19, _vector_table
 
@@ -119,11 +118,44 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	elr_el3, x0
 	eret
 
+/*
+References:
+- https://github.com/s-matyukevich/raspberry-pi-os/blob/761eee1cbd709116d0d1235a0085c9c560678391/exercises/lesson02/2/zjd0112/src/boot.S
+- https://github.com/s-matyukevich/raspberry-pi-os/blob/master/src/lesson02/src/boot.S
+*/
+
+/* HCR_EL2, Hypervisor Configuration Register (EL2), Page 2487 of AArch64-Reference-Manual. */
+#define HCR_RW	    			(1 << 31)
+#define HCR_VALUE			HCR_RW
+
+/* SPSR_EL2, Saved Program Status Register (EL2) Page 383 of AArch64-Reference-Manual. */
+#define SPSR_MASK_ALL_EL2       (7 << 6)
+#define SPSR_EL1h               (5 << 0)
+#define SPSR_VALUE_EL2          (SPSR_MASK_ALL_EL2 | SPSR_EL1h)
+
 2:
-	/* Booting from EL2 is not supported */
-	b	.
+    /* Initialize sctlr_el1 to reset value */
+	mov_imm	x0, SCTLR_EL1_RES1
+	msr	sctlr_el1, x0
+
+	ldr	x0, =HCR_VALUE
+	msr	hcr_el2, x0
+
+    /* TODO: Should we also do this for EL2? Disable EA/IRQ/FIQ routing to EL3 and set EL1 to AArch64 */
+	/* mov	x0, xzr
+	orr	x0, x0, #(SCR_EL3_RW)
+	msr	scr_el3, x0 */
+
+    ldr x0, =SPSR_VALUE_EL2
+    msr spsr_el2, x0
+
+    adr x0, 1f
+    msr elr_el2, x0
+
+    eret
 
 1:
+
 	/* Initialize VBAR */
 	msr	vbar_el1, x19
 	isb
@@ -151,6 +183,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	/* Enable the SError interrupt */
 	msr	daifclr, #(DAIFSET_ABT)
 
+    b raspi3_helloworld
 	bl	z_arm64_prep_c
 
 
@@ -212,3 +245,9 @@ raspi3_memzero:
 	subs x1, x1, #8
 	b.gt raspi3_memzero
 	ret
+
+    .globl raspi3_get_el
+raspi3_get_el:
+    mrs x0, CurrentEL
+    lsr x0, x0, #2
+    ret
