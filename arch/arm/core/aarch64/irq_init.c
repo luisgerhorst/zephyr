@@ -12,6 +12,8 @@
 #include <arch/cpu.h>
 #include <drivers/interrupt_controller/gic.h>
 
+void raspi3_c_helloworld(char *context);
+
 /**
  * @brief Initialise interrupts
  *

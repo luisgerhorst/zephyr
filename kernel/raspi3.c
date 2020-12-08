@@ -81,14 +81,12 @@ void miniuart_send_string(char* str) {
 
 extern unsigned int raspi3_get_el(void);
 
-void raspi3_c_helloworld(unsigned long id)
+void raspi3_c_helloworld(char *context)
 {
-	if (id == 0) {
-		miniuart_init();
-	}
-	miniuart_send_string("Hello from processor ");
-	miniuart_send(id + 48);
-	miniuart_send_string(".\r\n");
+	miniuart_init();
+	miniuart_send_string("Hello from ");
+	miniuart_send_string(context);
+	miniuart_send_string("\r\n");
 
 	miniuart_send_string("el = ");
 	miniuart_send(raspi3_get_el() + 48);
