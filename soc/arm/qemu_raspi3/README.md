@@ -6,4 +6,4 @@ SoC of the Raspberry Pi
 - 3 Mod. B
 - 3 Mod. B+.
 
-Peripheral Manual: https://github.com/raspberrypi/documentation/files/1888662/BCM2837-ARM-Peripherals.-.Revised.-.V2-1.pdf
+Peripheral Manual (BCM2837-PM): https://github.com/raspberrypi/documentation/files/1888662/BCM2837-ARM-Peripherals.-.Revised.-.V2-1.pdf

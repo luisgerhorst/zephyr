@@ -4,3 +4,4 @@
 zephyr_library_sources_ifdef(CONFIG_ARM_MMU mmu_regions.c)
 
 zephyr_sources_ifdef(CONFIG_SOC_QEMU_RASPI3    plat_core.S)
+zephyr_sources_ifdef(CONFIG_SOC_QEMU_RASPI3    irq.c)

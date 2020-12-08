@@ -9,7 +9,8 @@ config SOC
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
-	default 220
+    # via BCM2837-PM Page 113
+	default 64
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 62500000
@@ -22,5 +23,8 @@ config FLASH_SIZE
 
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config ARM_CUSTOM_INTERRUPT_CONTROLLER
+    default y
 
 endif # SOC_QEMU_RASPI3
