@@ -1,0 +1,106 @@
+/*
+* Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+*
+* SPDX-License-Identifier: Apache-2.0
+*
+*/
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm/armv8-a.dtsi>
+
+/ {
+	interrupt-parent = <&intc>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <1>;
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <2>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <3>;
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&local_intc>;
+		/* TODO: Is the intc nested into the local_intc? Maybe we can tell zephyr to generate the unique interrupt number for us? */
+		interrupts = <72 0 0>, <73 0 0>, <75 0 0>, <74 0 0>; /* CNTPSIRQ, CNTPNSIRQ, CNTVIRQ, CNTHPIRQ */
+		label = "arch_timer";
+	};
+
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		/* BUG: This is not used, instead the parameters are hardcored in uart_pl011. */
+		clock-frequency = <14000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		/* https://github.com/s-matyukevich/raspberry-pi-os/blob/master/docs/lesson03/rpi-os.md#configuring-interrupt-controller */
+		intc: interrupt-controller@3f00b200 {
+			compatible = "brcm,bcm2835-armctrl-ic";
+			reg = <0x3f00b200 0x200>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			label = "intc";
+		};
+
+		local_intc: local_intc@40000000 {
+			compatible = "brcm,bcm2835-l1-intc";
+			reg = <0x40000000 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			label = "l1-intc";
+		};
+
+		uart0: uart@3f201000 {
+			compatible = "arm,pl011";
+			/* #clock-cells = <1>; */
+			reg = <0x3f201000 0x1000>;
+			status = "disabled";
+			interrupts = <57 0 0>;
+			interrupt-names = "irq_0";
+			clocks = <&uartclk>;
+			label = "UART_0";
+		};
+	};
+};
+
+/ {
+	model = "Raspberry Pi 3 Model B+";
+	compatible = "qemu,arm-cortex-a53";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		/* TODO: why has this no effect? falls back to size 0xffffffffffff6000 */
+		/* zephyr,sram = &sram; */
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};

@@ -38,6 +38,18 @@ volatile struct {
  */
 volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
 
+#ifdef CONFIG_SOC_BCM2837
+static ALWAYS_INLINE void __SEV(void)
+{
+	__asm__ volatile ("sev" : : : "memory");
+}
+
+static void sys_write64(uint64_t val, uintptr_t addr) {
+	sys_write32(val, addr);
+	sys_write32(val >> 32, addr + sizeof(uint32_t));
+}
+#endif
+
 extern void __start(void);
 /* Called from Zephyr initialization */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
@@ -55,9 +67,15 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	arch_dcache_range((void *)&arm64_cpu_init[cpu_num],
 			  sizeof(arm64_cpu_init[cpu_num]), K_CACHE_WB_INVD);
 
+#ifdef CONFIG_SOC_BCM2837
+	sys_write64((uint64_t) &__start, 0xd8 + 0x8 * cpu_num);
+	__DSB();
+	__SEV();
+#else
 	/* TODO: get mpidr from device tree, using cpu_num */
 	if (pm_cpu_on(cpu_num, (uint64_t)&__start))
 		printk("Failed to boot CPU%d\n", cpu_num);
+#endif
 
 	/* Wait secondary cores up, see z_arm64_secondary_start */
 	while (arm64_cpu_init[cpu_num].fn) {
@@ -74,9 +92,11 @@ void z_arm64_secondary_start(void)
 	z_arm64_mmu_init();
 
 #ifdef CONFIG_SMP
+#ifndef CONFIG_SOC_BCM2837
 	arm_gic_secondary_init();
 
 	irq_enable(SGI_SCHED_IPI);
+#endif
 #endif
 
 	fn = arm64_cpu_init[cpu_num].fn;
@@ -94,6 +114,7 @@ void z_arm64_secondary_start(void)
 }
 
 #ifdef CONFIG_SMP
+#ifndef CONFIG_SOC_BCM2837
 void sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
@@ -130,4 +151,5 @@ static int arm64_smp_init(const struct device *dev)
 	return 0;
 }
 SYS_INIT(arm64_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
 #endif

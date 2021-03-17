@@ -185,8 +185,13 @@ static int pl011_set_baudrate(const struct device *dev,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_BOARD_RASPI3
+	PL011_REGS(dev)->ibrd = 26;
+	PL011_REGS(dev)->fbrd = 3;
+#else
 	PL011_REGS(dev)->ibrd = bauddiv >> PL011_FBRD_WIDTH;
 	PL011_REGS(dev)->fbrd = bauddiv & ((1u << PL011_FBRD_WIDTH) - 1u);
+#endif
 
 	__DMB();
 
@@ -356,10 +361,50 @@ static const struct uart_driver_api pl011_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
+#ifdef CONFIG_BOARD_RASPI3
+#define PBASE 0x3F000000
+
+#define GPFSEL1 (PBASE + 0x00200004)
+#define GPSET0 (PBASE + 0x0020001C)
+#define GPCLR0 (PBASE + 0x00200028)
+#define GPPUD (PBASE + 0x00200094)
+#define GPPUDCLK0 (PBASE + 0x00200098)
+
+static void write32_sys(uintptr_t addr, uint32_t val) {
+	sys_write32(val, addr);
+}
+
+#define GPIO_ALT0 4 // UART0/PL011
+#define GPIO_ALT5 2 // UART1/Mini/AUX
+
+static void raspi3_gpio_enable_pl011(void)
+{
+	unsigned int selector;  // 32 bits
+
+	selector = sys_read32(GPFSEL1);
+	selector &= ~(7 << 12);
+	selector |= GPIO_ALT0 << 12; // Set GPIO14
+	selector &= ~(7 << 15);
+	selector |= GPIO_ALT0 << 15; // Set GPIO15
+	write32_sys(GPFSEL1, selector);
+
+	// Set GPIO pull-up/down. Common to Mini UART (AUX) and PL011.
+	write32_sys(GPPUD, 0);
+	k_busy_wait(150); 	/* 150 cycles ~= 150us */
+	write32_sys(GPPUDCLK0, (1 << 14) | (1 << 15));
+	k_busy_wait(150);
+	write32_sys(GPPUDCLK0, 0);
+}
+#endif
+
 static int pl011_init(const struct device *dev)
 {
 	int ret;
 	uint32_t lcrh;
+
+#ifdef CONFIG_BOARD_RASPI3
+	raspi3_gpio_enable_pl011();
+#endif
 
 	/*
 	 * If working in SBSA mode, we assume that UART is already configured,

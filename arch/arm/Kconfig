@@ -20,7 +20,7 @@ config CPU_CORTEX
 
 config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	bool
-	depends on !CPU_CORTEX_M
+	depends on !CPU_CORTEX_M || SOC_BCM2837
 	help
 	  This option indicates that the ARM CPU is connected to a custom (i.e.
 	  non-GIC) interrupt controller.

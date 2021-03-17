@@ -1,0 +1,12 @@
+# Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RASPI3
+
+config BUILD_OUTPUT_BIN
+	default y
+
+config BOARD
+	default "raspi3"
+
+endif # BOARD_RASPI3

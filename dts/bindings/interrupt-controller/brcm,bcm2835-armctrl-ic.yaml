@@ -1,0 +1,21 @@
+# Copyright (c) 2018 Marvell
+# SPDX-License-Identifier: Apache-2.0
+
+description: Interrupt Controller
+
+compatible: "brcm,bcm2835-armctrl-ic"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+# GIC-compatible to allow reuse of arm,arm-timer. flags and priority are always 0.
+interrupt-cells:
+  - irq
+  - flags
+  - priority

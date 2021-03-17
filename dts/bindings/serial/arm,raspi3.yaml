@@ -1,0 +1,9 @@
+description: raspi3 UART
+
+compatible: "arm,raspi3"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true

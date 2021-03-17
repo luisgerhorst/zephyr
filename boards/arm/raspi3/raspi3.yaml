@@ -1,0 +1,14 @@
+identifier: raspi3
+name: Raspberry Pi 3
+type: qemu
+simulation: qemu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 256
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
